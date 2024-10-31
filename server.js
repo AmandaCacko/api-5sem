@@ -6,6 +6,7 @@ const userRoutes = require('./routes/userRoutes');
 const queueRoutes = require('./routes/queueRoutes');
 const creditRoutes = require('./routes/creditRoutes');
 const authMiddleware = require('./middlewares/authMiddleware');
+const cors = require('cors');
 
 // Leitura da senha do arquivo db.txt
 const db_password = fs.readFileSync('./db.txt', 'utf8').trim();
@@ -22,6 +23,7 @@ mongoose.connect(uri, {
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 // Rotas
 app.use('/api/auth', authRoutes);
