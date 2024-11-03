@@ -1,8 +1,21 @@
-const Queue = require('../models/queue');
+const PS5Queue = require('../models/ps5Queue');
+const XboxQueue = require('../models/xboxQueue');
+const VRQueue = require('../models/vrQueue');
 
 exports.getQueues = async (req, res) => {
   try {
-    const queues = await Queue.find().populate('players', 'username');
+    // Obtenha todas as filas de cada console
+    const ps5Queues = await PS5Queue.find();
+    const xboxQueues = await XboxQueue.find();
+    const vrQueues = await VRQueue.find();
+
+    // Combine as filas em um único array
+    const queues = {
+      PS5: ps5Queues,
+      Xbox: xboxQueues,
+      VR: vrQueues,
+    };
+
     res.json(queues);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -10,9 +23,37 @@ exports.getQueues = async (req, res) => {
 };
 
 exports.createQueue = async (req, res) => {
-  const { name, platform, game } = req.body;
+  const { name, platform, game, user, dateTime, positionFila, console } = req.body;
+
   try {
-    const queue = new Queue({ name, platform, game });
+    let queue;
+
+    // Cria a fila no modelo correspondente baseado no console
+    if (console === 'PS5') {
+      queue = new PS5Queue({
+        name,
+        platform,
+        game,
+        players: [{ user, dateTime, positionFila, console }]
+      });
+    } else if (console === 'Xbox') {
+      queue = new XboxQueue({
+        name,
+        platform,
+        game,
+        players: [{ user, dateTime, positionFila, console }]
+      });
+    } else if (console === 'VR') {
+      queue = new VRQueue({
+        name,
+        platform,
+        game,
+        players: [{ user, dateTime, positionFila, console }]
+      });
+    } else {
+      return res.status(400).json({ error: 'Invalid console specified' });
+    }
+
     await queue.save();
     res.status(201).json(queue);
   } catch (err) {
@@ -21,8 +62,21 @@ exports.createQueue = async (req, res) => {
 };
 
 exports.getQueue = async (req, res) => {
+  const { console, id } = req.params;
+
   try {
-    const queue = await Queue.findById(req.params.id).populate('players', 'username');
+    let queue;
+    // Seleciona a fila com base no console
+    if (console === 'PS5') {
+      queue = await PS5Queue.findById(id);
+    } else if (console === 'Xbox') {
+      queue = await XboxQueue.findById(id);
+    } else if (console === 'VR') {
+      queue = await VRQueue.findById(id);
+    } else {
+      return res.status(400).json({ error: 'Invalid console specified' });
+    }
+
     res.json(queue);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -30,10 +84,23 @@ exports.getQueue = async (req, res) => {
 };
 
 exports.joinQueue = async (req, res) => {
+  const { console } = req.params;
+
   try {
-    const queue = await Queue.findById(req.params.id);
-    if (!queue.players.includes(req.user.userId)) {
-      queue.players.push(req.user.userId);
+    let queue;
+    // Seleciona a fila com base no console
+    if (console === 'PS5') {
+      queue = await PS5Queue.findById(req.params.id);
+    } else if (console === 'Xbox') {
+      queue = await XboxQueue.findById(req.params.id);
+    } else if (console === 'VR') {
+      queue = await VRQueue.findById(req.params.id);
+    } else {
+      return res.status(400).json({ error: 'Invalid console specified' });
+    }
+
+    if (!queue.players.some(player => player.user === req.user.username)) {
+      queue.players.push({ user: req.user.username, dateTime: new Date(), positionFila: queue.players.length + 1, console });
       await queue.save();
     }
     res.json(queue);
@@ -43,9 +110,22 @@ exports.joinQueue = async (req, res) => {
 };
 
 exports.leaveQueue = async (req, res) => {
+  const { console } = req.params;
+
   try {
-    const queue = await Queue.findById(req.params.id);
-    queue.players = queue.players.filter(player => player.toString() !== req.user.userId);
+    let queue;
+    // Seleciona a fila com base no console
+    if (console === 'PS5') {
+      queue = await PS5Queue.findById(req.params.id);
+    } else if (console === 'Xbox') {
+      queue = await XboxQueue.findById(req.params.id);
+    } else if (console === 'VR') {
+      queue = await VRQueue.findById(req.params.id);
+    } else {
+      return res.status(400).json({ error: 'Invalid console specified' });
+    }
+
+    queue.players = queue.players.filter(player => player.user !== req.user.username);
     await queue.save();
     res.json(queue);
   } catch (err) {

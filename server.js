@@ -6,10 +6,11 @@ const userRoutes = require('./routes/userRoutes');
 const queueRoutes = require('./routes/queueRoutes');
 const creditRoutes = require('./routes/creditRoutes');
 const authMiddleware = require('./middlewares/authMiddleware');
+const cors = require('cors');
 
 // Leitura da senha do arquivo db.txt
 const db_password = fs.readFileSync('./db.txt', 'utf8').trim();
-const uri = `mongodb+srv://amandacacko:${db_password}@api5sem.4uu9e.mongodb.net/studiogames?retryWrites=true&w=majority&appName=api5sem`;
+const uri = 'mongodb://localhost:27017/studiogames';
 
 mongoose.connect(uri, {
   useNewUrlParser: true,
@@ -22,6 +23,7 @@ mongoose.connect(uri, {
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 // Rotas
 app.use('/api/auth', authRoutes);
