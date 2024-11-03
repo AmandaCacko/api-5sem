@@ -1,3 +1,4 @@
+const Queue = require('../models/queue');
 const PS5Queue = require('../models/ps5Queue');
 const XboxQueue = require('../models/xboxQueue');
 const VRQueue = require('../models/vrQueue');
@@ -23,7 +24,8 @@ exports.getQueues = async (req, res) => {
 };
 
 exports.createQueue = async (req, res) => {
-  const { name, platform, game, user, dateTime, positionFila, console } = req.body;
+  const { ID, user, dateTime, positionFila, console } = req.body;
+
 
   try {
     let queue;
@@ -31,24 +33,27 @@ exports.createQueue = async (req, res) => {
     // Cria a fila no modelo correspondente baseado no console
     if (console === 'PS5') {
       queue = new PS5Queue({
-        name,
-        platform,
-        game,
-        players: [{ user, dateTime, positionFila, console }]
+        ID,
+        user,
+        dateTime,
+        positionFila,
+        console
       });
     } else if (console === 'Xbox') {
       queue = new XboxQueue({
-        name,
-        platform,
-        game,
-        players: [{ user, dateTime, positionFila, console }]
+        ID,
+        user,
+        dateTime,
+        positionFila,
+        console
       });
     } else if (console === 'VR') {
       queue = new VRQueue({
-        name,
-        platform,
-        game,
-        players: [{ user, dateTime, positionFila, console }]
+        ID,
+        user,
+        dateTime,
+        positionFila,
+        console
       });
     } else {
       return res.status(400).json({ error: 'Invalid console specified' });
