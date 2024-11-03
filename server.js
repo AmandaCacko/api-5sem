@@ -10,7 +10,7 @@ const cors = require('cors');
 
 // Leitura da senha do arquivo db.txt
 const db_password = fs.readFileSync('./db.txt', 'utf8').trim();
-const uri = `mongodb+srv://amandacacko:<db_password>@api5sem.4uu9e.mongodb.net/?retryWrites=true&w=majority&appName=api5sem`;
+const uri = `mongodb+srv://amandacacko:${db_password}@api5sem.4uu9e.mongodb.net/studiogames?retryWrites=true&w=majority&appName=api5sem`;const uri = `mongodb+srv://amandacacko:${db_password}@api5sem.4uu9e.mongodb.net/studiogames?retryWrites=true&w=majority&appName=api5sem`;const uri = `mongodb+srv://amandacacko:${db_password}@api5sem.4uu9e.mongodb.net/studiogames?retryWrites=true&w=majority&appName=api5sem`;
 
 mongoose.connect(uri, {
   useNewUrlParser: true,
