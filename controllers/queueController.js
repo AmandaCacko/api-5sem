@@ -25,6 +25,7 @@ exports.getQueues = async (req, res) => {
 
 exports.createQueue = async (req, res) => {
   const { ID, user, dateTime, positionFila, console } = req.body;
+  console.log("Dados recebidos para criar a fila:", req.body);
 
 
   try {
@@ -39,7 +40,7 @@ exports.createQueue = async (req, res) => {
         positionFila,
         console
       });
-    } else if (console === 'Xbox') {
+    } else if (console === 'XBOX') {
       queue = new XboxQueue({
         ID,
         user,
