@@ -23,7 +23,7 @@ const app = express();
 app.use(express.json());
 
 app.use(cors({
-  origin: 'http://localhost:8081',
+  origin: '*',
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
 }));

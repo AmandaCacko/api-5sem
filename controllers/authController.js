@@ -20,16 +20,19 @@ exports.login = async (req, res) => {
   const { username, password } = req.body;
   try {
     const user = await User.findOne({ username });
+    console.log("Usuário encontrado:", user); // Log do usuário encontrado
     if (!user) {
       return res.status(400).json({ message: 'Invalid user or password' });
     }
     const isMatch = await bcrypt.compare(password, user.password);
+    console.log("Senha corresponde:", isMatch); // Log da verificação da senha
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid user or password' });
     }
     const token = jwt.sign({ userId: user._id }, 'your_jwt_secret', { expiresIn: '1h' });
     res.json({ token });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Erro ao fazer login:", err); // Log do erro
+    res.status(500).json({ error: 'Erro interno do servidor', details: err.message }); // Adicione detalhes do erro
   }
 };
