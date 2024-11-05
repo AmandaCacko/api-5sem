@@ -77,7 +77,7 @@ exports.getQueuesByConsole = async (req, res) => {
     // Seleciona a fila com base no console
     if (console === 'PS5') {
       queues = await PS5Queue.find(); // Obtém todos os documentos da coleção PS5Queue
-    } else if (console === 'Xbox') {
+    } else if (console === 'XBOX') {
       queues = await XboxQueue.find(); // Obtém todos os documentos da coleção XboxQueue
     } else if (console === 'VR') {
       queues = await VRQueue.find(); // Obtém todos os documentos da coleção VRQueue
