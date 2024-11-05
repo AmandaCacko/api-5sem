@@ -25,7 +25,6 @@ exports.getQueues = async (req, res) => {
 
 exports.createQueue = async (req, res) => {
   const { ID, user, dateTime, positionFila, console } = req.body;
-  console.log("Dados recebidos para criar a fila:", req.body);
 
 
   try {
@@ -59,6 +58,8 @@ exports.createQueue = async (req, res) => {
     } else {
       return res.status(400).json({ error: 'Invalid console specified' });
     }
+
+    //console.log("Dados recebidos para criar a fila:", req.body);
 
     await queue.save();
     res.status(201).json(queue);
