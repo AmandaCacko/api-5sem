@@ -91,28 +91,23 @@ exports.getQueuesByConsole = async (req, res) => {
   }
 };
 
-exports.getQueuesByConsoleAndUser = async (req, res) => {
-  const { console, username } = req.params; // Obtém os parâmetros "console" e "username"
+exports.getQueuesByUser = async (req, res) => {
+  const { username } = req.params; // Obtém o parâmetro "username"
 
   try {
-    let queues;
+    // Busca as filas de todos os consoles para o usuário especificado
+    const ps5Queues = await PS5Queue.find({ user: username });
+    const xboxQueues = await XboxQueue.find({ user: username });
+    const vrQueues = await VRQueue.find({ user: username });
 
-    // Seleciona a fila com base no console
-    if (console === 'PS5') {
-      queues = await PS5Queue.find({ user: username }); // Filtra pela propriedade "user"
-    } else if (console === 'XBOX') {
-      queues = await XboxQueue.find({ user: username }); // Filtra pela propriedade "user"
-    } else if (console === 'VR') {
-      queues = await VRQueue.find({ user: username }); // Filtra pela propriedade "user"
-    } else {
-      return res.status(400).json({ error: 'Invalid console specified' });
+    // Combina todas as filas em um único array
+    const allQueues = [...ps5Queues, ...xboxQueues, ...vrQueues];
+
+    if (allQueues.length === 0) {
+      return res.status(404).json({ message: 'No queues found for this user' });
     }
 
-    if (queues.length === 0) {
-      return res.status(404).json({ message: 'No queues found for this user and console' });
-    }
-
-    res.json(queues); // Retorna todos os documentos encontrados
+    res.json(allQueues); // Retorna todos os documentos encontrados
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
