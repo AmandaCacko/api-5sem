@@ -68,23 +68,24 @@ exports.createQueue = async (req, res) => {
   }
 };
 
-exports.getQueue = async (req, res) => {
-  const { console, id } = req.params;
+exports.getQueuesByConsole = async (req, res) => {
+  const { console } = req.params; // Obtém o parâmetro "console"
 
   try {
-    let queue;
+    let queues;
+
     // Seleciona a fila com base no console
     if (console === 'PS5') {
-      queue = await PS5Queue.findById(id);
+      queues = await PS5Queue.find(); // Obtém todos os documentos da coleção PS5Queue
     } else if (console === 'Xbox') {
-      queue = await XboxQueue.findById(id);
+      queues = await XboxQueue.find(); // Obtém todos os documentos da coleção XboxQueue
     } else if (console === 'VR') {
-      queue = await VRQueue.findById(id);
+      queues = await VRQueue.find(); // Obtém todos os documentos da coleção VRQueue
     } else {
       return res.status(400).json({ error: 'Invalid console specified' });
     }
 
-    res.json(queue);
+    res.json(queues); // Retorna todos os documentos encontrados
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
