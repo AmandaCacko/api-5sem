@@ -175,7 +175,6 @@ exports.leaveQueue = async (req, res) => {
 
     res.json(queue);  // Retorna a fila atualizada
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: err.message });
   }
 };
