@@ -141,25 +141,41 @@ exports.joinQueue = async (req, res) => {
 };
 
 exports.leaveQueue = async (req, res) => {
-  const { console } = req.params;
-
+  const { console } = req.params;  // Obtém o tipo de console (PS5, Xbox, VR)
+  const { positionFila } = req.body;  // Recebe a posição da fila para remoção
+  
   try {
     let queue;
-    // Seleciona a fila com base no console
+    let updatedQueue;
+
+    // Verifica qual coleção utilizar com base no console
     if (console === 'PS5') {
-      queue = await PS5Queue.findById(req.params.id);
+      queue = await PS5Queue.findOne({ positionFila: positionFila });
+      updatedQueue = PS5Queue;
     } else if (console === 'Xbox') {
-      queue = await XboxQueue.findById(req.params.id);
+      queue = await XboxQueue.findOne({ positionFila: positionFila });
+      updatedQueue = XboxQueue;
     } else if (console === 'VR') {
-      queue = await VRQueue.findById(req.params.id);
+      queue = await VRQueue.findOne({ positionFila: positionFila });
+      updatedQueue = VRQueue;
     } else {
       return res.status(400).json({ error: 'Invalid console specified' });
     }
 
-    queue.players = queue.players.filter(player => player.user !== req.user.username);
-    await queue.save();
-    res.json(queue);
+    // Se a fila não for encontrada, retorna erro
+    if (!queue) {
+      return res.status(404).json({ error: 'Queue not found for this position' });
+    }
+
+    // Filtra a lista de jogadores para remover o jogador com a posição da fila especificada
+    queue.players = queue.players.filter(player => player.positionFila !== positionFila);
+
+    // Salva a fila atualizada no banco de dados
+    await updatedQueue.findByIdAndUpdate(queue._id, { players: queue.players });
+
+    res.json(queue);  // Retorna a fila atualizada
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 };
