@@ -145,32 +145,34 @@ exports.leaveQueue = async (req, res) => {
   const { positionFila } = req.body;  // Recebe a posição da fila para remoção
   
   try {
-    let queue;
-    let updatedQueue;
+    let queueModel;
 
-    // Verifica qual coleção utilizar com base no console
+    // Seleciona o modelo correto com base no console
     if (console === 'PS5') {
-      queue = await PS5Queue.findOne({ positionFila: positionFila });
-      updatedQueue = PS5Queue;
+      queueModel = PS5Queue;
     } else if (console === 'Xbox') {
-      queue = await XboxQueue.findOne({ positionFila: positionFila });
-      updatedQueue = XboxQueue;
+      queueModel = XboxQueue;
     } else if (console === 'VR') {
-      queue = await VRQueue.findOne({ positionFila: positionFila });
-      updatedQueue = VRQueue;
+      queueModel = VRQueue;
     } else {
       return res.status(400).json({ error: 'Invalid console specified' });
     }
 
-    // Se a fila não for encontrada, retorna erro
-    if (!queue) {
+    // Deleta o item da fila com a posição especificada
+    const deletedItem = await queueModel.findOneAndDelete({ positionFila: positionFila });
+
+    // Verifica se o item existia
+    if (!deletedItem) {
       return res.status(404).json({ error: 'Queue not found for this position' });
     }
 
-    // Deleta o documento com base na posição da fila
-    await updatedQueue.findOneAndDelete({ positionFila: positionFila });
+    // Atualiza todos os itens com positionFila maior que o item deletado
+    await queueModel.updateMany(
+      { positionFila: { $gt: positionFila } },  // Seleciona os itens com posição maior que a deletada
+      { $inc: { positionFila: -1 } }  // Diminui positionFila em 1 para os itens selecionados
+    );
 
-    res.json({ message: 'Successfully left the queue' });  // Retorna uma mensagem de sucesso
+    res.json({ message: 'Successfully left the queue and updated positions' });  // Retorna uma mensagem de sucesso
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
