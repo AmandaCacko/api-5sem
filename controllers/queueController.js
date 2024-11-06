@@ -167,13 +167,10 @@ exports.leaveQueue = async (req, res) => {
       return res.status(404).json({ error: 'Queue not found for this position' });
     }
 
-    // Filtra a lista de jogadores para remover o jogador com a posição da fila especificada
-    queue.players = queue.players.filter(player => player.positionFila !== positionFila);
+    // Deleta o documento com base na posição da fila
+    await updatedQueue.findOneAndDelete({ positionFila: positionFila });
 
-    // Salva a fila atualizada no banco de dados
-    await updatedQueue.findByIdAndUpdate(queue._id, { players: queue.players });
-
-    res.json(queue);  // Retorna a fila atualizada
+    res.json({ message: 'Successfully left the queue' });  // Retorna uma mensagem de sucesso
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
