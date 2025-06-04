@@ -1,12 +1,21 @@
-const mongoose = require('mongoose');
+const { db } = require('../firebase');
+const XboxQueue = db.collection('xboxQueue');
 
-const xboxQueueSchema = new mongoose.Schema({
-  ID: { type: String, required: true },
-  user: { type: String, required: true },
-  dateTime: { type: Date, default: Date.now },
-  positionFila: { type: Number, required: true },
-  console: { type: String, required: true }
+async function addXboxEntry(data) {
+  return await XboxQueue.add({
+    user: data.user,
+    dateTime: new Date(),
+    positionFila: data.positionFila,
+    console: data.console
   });
+}
 
-  const XboxQueue = mongoose.model('XboxQueue', xboxQueueSchema);
-  module.exports = XboxQueue;
+async function getXboxQueue() {
+  const snapshot = await XboxQueue.orderBy('positionFila').get();
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+module.exports = {
+  addXboxEntry,
+  getXboxQueue
+};

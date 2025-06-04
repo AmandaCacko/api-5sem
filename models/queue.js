@@ -1,17 +1,45 @@
-const mongoose = require('mongoose');
+const { db } = require('../firebase');
+const Queue = db.collection('queues');
 
-const queueSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  platform: { type: String, required: true },
-  game: { type: String, required: true },
-  players: [{ 
-    user: { type: String, required: true }, // Nome do usuário
-    dateTime: { type: Date, default: Date.now }, // Data e hora da inserção
-    positionFila: { type: Number, required: true }, // Posição na fila
-    console: { type: String, required: true } // Dado fixo do console
-  }]
-});
+async function createQueue(data) {
+  return await Queue.add({
+    name: data.name,
+    platform: data.platform,
+    game: data.game,
+    players: []
+  });
+}
 
-const Queue = mongoose.model('Queue', queueSchema);
+async function addPlayerToQueue(queueId, playerData) {
+  const queueRef = Queue.doc(queueId);
+  const doc = await queueRef.get();
 
-module.exports = Queue;
+  if (!doc.exists) return null;
+
+  const currentPlayers = doc.data().players || [];
+
+  await queueRef.update({
+    players: [
+      ...currentPlayers,
+      {
+        user: playerData.user,
+        dateTime: new Date(),
+        positionFila: playerData.positionFila,
+        console: playerData.console
+      }
+    ]
+  });
+
+  return true;
+}
+
+async function getQueue(queueId) {
+  const doc = await Queue.doc(queueId).get();
+  return doc.exists ? { id: doc.id, ...doc.data() } : null;
+}
+
+module.exports = {
+  createQueue,
+  addPlayerToQueue,
+  getQueue
+};

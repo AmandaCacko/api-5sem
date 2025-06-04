@@ -1,38 +1,58 @@
-const User = require('../models/user');
+const { db } = require('../firebase');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+const Users = db.collection('users');
+const JWT_SECRET = process.env.JWT_SECRET;
+
 exports.register = async (req, res) => {
   const { email, username, password } = req.body;
+
   try {
+    const userSnapshot = await Users.where('username', '==', username).get();
+    if (!userSnapshot.empty) {
+      return res.status(400).json({ message: 'Username already taken' });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ email, username, password: hashedPassword });
-    await user.save();
+
+    const newUserRef = Users.doc();
+    await newUserRef.set({
+      email,
+      username,
+      password: hashedPassword,
+      credits: 0
+    });
+
     res.status(201).json({ message: 'User created successfully' });
   } catch (err) {
+    console.error("Erro no register:", err);
     res.status(500).json({ error: err.message });
   }
 };
 
 exports.login = async (req, res) => {
-  console.log("Dados recebidos para login:", req.body); // Log dos dados recebidos
-    
   const { username, password } = req.body;
+
   try {
-    const user = await User.findOne({ username });
-    console.log("Usuário encontrado:", user); // Log do usuário encontrado
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid user or password' });
+    const userSnapshot = await Users.where('username', '==', username).get();
+    if (userSnapshot.empty) {
+      return res.status(400).json({ message: 'Invalid username or password' });
     }
-    const isMatch = await bcrypt.compare(password, user.password);
-    console.log("Senha corresponde:", isMatch); // Log da verificação da senha
+
+    const userDoc = userSnapshot.docs[0];
+    const userData = userDoc.data();
+
+    const isMatch = await bcrypt.compare(password, userData.password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid user or password' });
+      return res.status(400).json({ message: 'Invalid username or password' });
     }
-    const token = jwt.sign({ userId: user._id }, 'your_jwt_secret', { expiresIn: '1h' });
+    
+    const token = jwt.sign({ userId: userDoc.id, username }, JWT_SECRET, { expiresIn: '1h' });
+
     res.json({ token });
   } catch (err) {
-    console.error("Erro ao fazer login:", err); // Log do erro
-    res.status(500).json({ error: 'Erro interno do servidor', details: err.message }); // Adicione detalhes do erro
+    console.error("Erro no login:", err);
+    res.status(500).json({ error: err.message });
   }
 };

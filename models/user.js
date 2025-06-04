@@ -1,10 +1,26 @@
-const mongoose = require('mongoose');
+const { db } = require('../firebase');
+const Users = db.collection('users');
 
-const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  credits: { type: Number, default: 0 }
-});
+async function createUser(uid, data) {
+  return await Users.doc(uid).set({
+    username: data.username,
+    email: data.email,
+    password: data.password,
+    credits: 0
+  });
+}
 
-module.exports = mongoose.model('User', userSchema);
+async function getUser(uid) {
+  const doc = await Users.doc(uid).get();
+  return doc.exists ? { id: doc.id, ...doc.data() } : null;
+}
+
+async function updateCredits(uid, credits) {
+  return await Users.doc(uid).update({ credits });
+}
+
+module.exports = {
+  createUser,
+  getUser,
+  updateCredits
+};

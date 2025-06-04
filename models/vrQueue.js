@@ -1,13 +1,21 @@
-const mongoose = require('mongoose');
+const { db } = require('../firebase');
+const VRQueue = db.collection('vrQueue');
 
-const vrQueueSchema = new mongoose.Schema({
-  ID: { type: String, required: true },
-  user: { type: String, required: true },
-  dateTime: { type: Date, default: Date.now },
-  positionFila: { type: Number, required: true },
-  console: { type: String, required: true }
+async function addVREntry(data) {
+  return await VRQueue.add({
+    user: data.user,
+    dateTime: new Date(),
+    positionFila: data.positionFila,
+    console: data.console
   });
-  
+}
 
-const VRQueue = mongoose.model('VRQueue', vrQueueSchema);
-module.exports = VRQueue;
+async function getVRQueue() {
+  const snapshot = await VRQueue.orderBy('positionFila').get();
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+module.exports = {
+  addVREntry,
+  getVRQueue
+};
