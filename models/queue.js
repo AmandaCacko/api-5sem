@@ -1,4 +1,5 @@
-const { db } = require('../firebase');
+import { db } from '../config/firebase.js';
+
 const Queue = db.collection('queues');
 
 async function createQueue(data) {
@@ -6,7 +7,7 @@ async function createQueue(data) {
     name: data.name,
     platform: data.platform,
     game: data.game,
-    players: []
+    players: [],
   });
 }
 
@@ -24,10 +25,10 @@ async function addPlayerToQueue(queueId, playerData) {
       {
         user: playerData.user,
         dateTime: new Date(),
-        positionFila: playerData.positionFila,
-        console: playerData.console
-      }
-    ]
+        positionFila: currentPlayers.length + 1,
+        console: playerData.console,
+      },
+    ],
   });
 
   return true;
@@ -38,8 +39,4 @@ async function getQueue(queueId) {
   return doc.exists ? { id: doc.id, ...doc.data() } : null;
 }
 
-module.exports = {
-  createQueue,
-  addPlayerToQueue,
-  getQueue
-};
+export { createQueue, addPlayerToQueue, getQueue };

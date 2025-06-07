@@ -1,9 +1,14 @@
-const express = require('express');
+import express from 'express';
+import {
+  getUserCredits,
+  updateUserCredits
+} from '../controllers/creditController.js';
+
+import authMiddleware from '../middlewares/authMiddleware.js';
+
 const router = express.Router();
-const creditController = require('../controllers/creditController');
-const authMiddleware = require('../middlewares/authMiddleware');
 
-router.get('/', authMiddleware, creditController.getCredits);
-router.post('/add', authMiddleware, creditController.addCredits);
+router.get('/', authMiddleware, getUserCredits);
+router.put('/', authMiddleware, updateUserCredits);
 
-module.exports = router;
+export default router;

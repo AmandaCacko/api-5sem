@@ -1,4 +1,5 @@
-const { db } = require('../firebase');
+import { db } from '../config/firebase.js';
+
 const VRQueue = db.collection('vrQueue');
 
 async function addVREntry(data) {

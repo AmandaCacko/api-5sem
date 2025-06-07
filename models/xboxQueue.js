@@ -1,4 +1,5 @@
-const { db } = require('../firebase');
+import { db } from '../config/firebase.js';
+
 const XboxQueue = db.collection('xboxQueue');
 
 async function addXboxEntry(data) {

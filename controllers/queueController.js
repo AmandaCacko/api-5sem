@@ -1,178 +1,103 @@
-const Queue = require('../models/queue');
-const PS5Queue = require('../models/ps5Queue');
-const XboxQueue = require('../models/xboxQueue');
-const VRQueue = require('../models/vrQueue');
+import { db } from '../config/firebase.js';
 
-exports.getQueues = async (req, res) => {
+const Queues = db.collection('queues');
+
+export const getQueues = async (req, res) => {
   try {
-    // Obtenha todas as filas de cada console
-    const ps5Queues = await PS5Queue.find();
-    const xboxQueues = await XboxQueue.find();
-    const vrQueues = await VRQueue.find();
-
-    // Combine as filas em um único array
-    const queues = {
-      PS5: ps5Queues,
-      Xbox: xboxQueues,
-      VR: vrQueues,
-    };
-
+    const snapshot = await Queues.get();
+    const queues = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     res.json(queues);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-exports.createQueue = async (req, res) => {
-  const { ID, user, dateTime, positionFila, console } = req.body;
-
-
+export const createQueue = async (req, res) => {
+  const { name, platform, game } = req.body;
   try {
-    let queue;
-
-    // Cria a fila no modelo correspondente baseado no console
-    if (console === 'PS5') {
-      queue = new PS5Queue({
-        ID,
-        user,
-        dateTime,
-        positionFila,
-        console
-      });
-    } else if (console === 'XBOX') {
-      queue = new XboxQueue({
-        ID,
-        user,
-        dateTime,
-        positionFila,
-        console
-      });
-    } else if (console === 'VR') {
-      queue = new VRQueue({
-        ID,
-        user,
-        dateTime,
-        positionFila,
-        console
-      });
-    } else {
-      return res.status(400).json({ error: 'Invalid console specified' });
-    }
-
-    //console.log("Dados recebidos para criar a fila:", req.body);
-
-    await queue.save();
-    res.status(201).json(queue);
+    const newQueue = await Queues.add({
+      name,
+      platform,
+      game,
+      players: [],
+    });
+    const queueDoc = await newQueue.get();
+    res.status(201).json({ id: queueDoc.id, ...queueDoc.data() });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-exports.getQueuesByConsole = async (req, res) => {
-  const { console } = req.params; // Obtém o parâmetro "console"
-
-  try {
-    let queues;
-
-    // Seleciona a fila com base no console
-    if (console === 'PS5') {
-      queues = await PS5Queue.find(); // Obtém todos os documentos da coleção PS5Queue
-    } else if (console === 'XBOX') {
-      queues = await XboxQueue.find(); // Obtém todos os documentos da coleção XboxQueue
-    } else if (console === 'VR') {
-      queues = await VRQueue.find(); // Obtém todos os documentos da coleção VRQueue
-    } else {
-      return res.status(400).json({ error: 'Invalid console specified' });
-    }
-
-    res.json(queues); // Retorna todos os documentos encontrados
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-exports.getQueuesByUser = async (req, res) => {
-  const { username } = req.params; // Obtém o parâmetro "username"
-
-  try {
-    // Busca as filas de todos os consoles para o usuário especificado
-    const ps5Queues = await PS5Queue.find({ user: username });
-    const xboxQueues = await XboxQueue.find({ user: username });
-    const vrQueues = await VRQueue.find({ user: username });
-
-    // Combina todas as filas em um único array
-    const allQueues = [...ps5Queues, ...xboxQueues, ...vrQueues];
-
-    if (allQueues.length === 0) {
-      return res.status(404).json({ message: 'No queues found for this user' });
-    }
-
-    res.json(allQueues); // Retorna todos os documentos encontrados
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-
-exports.joinQueue = async (req, res) => {
+export const getQueuesByConsole = async (req, res) => {
   const { console } = req.params;
-
   try {
-    let queue;
-    // Seleciona a fila com base no console
-    if (console === 'PS5') {
-      queue = await PS5Queue.findById(req.params.id);
-    } else if (console === 'Xbox') {
-      queue = await XboxQueue.findById(req.params.id);
-    } else if (console === 'VR') {
-      queue = await VRQueue.findById(req.params.id);
-    } else {
-      return res.status(400).json({ error: 'Invalid console specified' });
-    }
-
-    if (!queue.players.some(player => player.user === req.user.username)) {
-      queue.players.push({ user: req.user.username, dateTime: new Date(), positionFila: queue.players.length + 1, console });
-      await queue.save();
-    }
-    res.json(queue);
+    const snapshot = await Queues.where('platform', '==', console).get();
+    const queues = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    res.json(queues);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-exports.leaveQueue = async (req, res) => {
-  const { console } = req.params;  // Obtém o tipo de console (PS5, Xbox, VR)
-  const { positionFila } = req.body;  // Recebe a posição da fila para remoção
-  
+export const getQueuesByUser = async (req, res) => {
+  const { username } = req.params;
   try {
-    let queueModel;
+    const snapshot = await Queues.where('players', 'array-contains', username).get();
+    const queues = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    res.json(queues);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
-    // Seleciona o modelo correto com base no console
-    if (console === 'PS5') {
-      queueModel = PS5Queue;
-    } else if (console === 'Xbox') {
-      queueModel = XboxQueue;
-    } else if (console === 'VR') {
-      queueModel = VRQueue;
-    } else {
-      return res.status(400).json({ error: 'Invalid console specified' });
+export const joinQueue = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const queueRef = Queues.doc(id);
+    const queueDoc = await queueRef.get();
+    if (!queueDoc.exists) {
+      return res.status(404).json({ message: 'Queue not found' });
     }
-
-    // Deleta o item da fila com a posição especificada
-    const deletedItem = await queueModel.findOneAndDelete({ positionFila: positionFila });
-
-    // Verifica se o item existia
-    if (!deletedItem) {
-      return res.status(404).json({ error: 'Queue not found for this position' });
+    const queueData = queueDoc.data();
+    const players = queueData.players || [];
+    if (players.find(player => player.user === req.user.username)) {
+      return res.status(400).json({ message: 'User already in queue' });
     }
+    players.push({
+      user: req.user.username,
+      dateTime: new Date(),
+      positionFila: players.length + 1,
+      console: queueData.platform,
+    });
+    await queueRef.update({ players });
+    res.json({ message: 'Joined queue successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
-    // Atualiza todos os itens com positionFila maior que o item deletado
-    await queueModel.updateMany(
-      { positionFila: { $gt: positionFila } },  // Seleciona os itens com posição maior que a deletada
-      { $inc: { positionFila: -1 } }  // Diminui positionFila em 1 para os itens selecionados
-    );
-
-    res.json({ message: 'Successfully left the queue and updated positions' });  // Retorna uma mensagem de sucesso
+export const leaveQueue = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const queueRef = Queues.doc(id);
+    const queueDoc = await queueRef.get();
+    if (!queueDoc.exists) {
+      return res.status(404).json({ message: 'Queue not found' });
+    }
+    const queueData = queueDoc.data();
+    let players = queueData.players || [];
+    const playerIndex = players.findIndex(player => player.user === req.user.username);
+    if (playerIndex === -1) {
+      return res.status(400).json({ message: 'User not in queue' });
+    }
+    players.splice(playerIndex, 1);
+    // Update positionFila for remaining players
+    players = players.map((player, index) => ({
+      ...player,
+      positionFila: index + 1,
+    }));
+    await queueRef.update({ players });
+    res.json({ message: 'Left queue successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

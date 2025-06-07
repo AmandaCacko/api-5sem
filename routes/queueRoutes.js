@@ -1,14 +1,14 @@
-const express = require('express');
+import express from 'express';
+import * as queueController from '../controllers/queueController.js';
+import authMiddleware from '../middlewares/authMiddleware.js';
+
 const router = express.Router();
-const queueController = require('../controllers/queueController');
-const authMiddleware = require('../middlewares/authMiddleware');
 
 router.get('/', authMiddleware, queueController.getQueues);
 router.post('/', authMiddleware, queueController.createQueue);
 router.get('/console/:console', authMiddleware, queueController.getQueuesByConsole);
 router.get('/user/:username', authMiddleware, queueController.getQueuesByUser);
 router.post('/:id/join', authMiddleware, queueController.joinQueue);
-router.post('/:console/leave', authMiddleware, queueController.leaveQueue);
+router.post('/:id/leave', authMiddleware, queueController.leaveQueue);
 
-
-module.exports = router;
+export default router;

@@ -1,21 +1,35 @@
-const User = require('../models/user');
+import { db } from '../config/firebase.js';
 
-exports.getCredits = async (req, res) => {
+const Users = db.collection('users');
+
+export const getUserCredits = async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId);
-    res.json({ credits: user.credits });
+    const userDoc = await Users.doc(req.user.userId).get();
+    if (!userDoc.exists) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const userData = userDoc.data();
+    res.json({ credits: userData.credits || 0 });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-exports.addCredits = async (req, res) => {
-  const { amount } = req.body;
+export const updateUserCredits = async (req, res) => {
+  const { credits } = req.body;
+
   try {
-    const user = await User.findById(req.user.userId);
-    user.credits += amount;
-    await user.save();
-    res.json({ credits: user.credits });
+    const userRef = Users.doc(req.user.userId);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    await userRef.update({ credits });
+
+    res.json({ message: 'Credits updated successfully', credits });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

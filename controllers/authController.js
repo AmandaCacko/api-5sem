@@ -1,11 +1,11 @@
-const { db } = require('../firebase');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+import { db } from '../config/firebase.js';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 const Users = db.collection('users');
 const JWT_SECRET = process.env.JWT_SECRET;
 
-exports.register = async (req, res) => {
+export const register = async (req, res) => {
   const { email, username, password } = req.body;
 
   try {
@@ -21,7 +21,7 @@ exports.register = async (req, res) => {
       email,
       username,
       password: hashedPassword,
-      credits: 0
+      credits: 0,
     });
 
     res.status(201).json({ message: 'User created successfully' });
@@ -31,7 +31,7 @@ exports.register = async (req, res) => {
   }
 };
 
-exports.login = async (req, res) => {
+export const login = async (req, res) => {
   const { username, password } = req.body;
 
   try {
@@ -47,7 +47,7 @@ exports.login = async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid username or password' });
     }
-    
+
     const token = jwt.sign({ userId: userDoc.id, username }, JWT_SECRET, { expiresIn: '1h' });
 
     res.json({ token });

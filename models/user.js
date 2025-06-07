@@ -1,4 +1,5 @@
-const { db } = require('../firebase');
+import { db } from '../config/firebase.js';
+
 const Users = db.collection('users');
 
 async function createUser(uid, data) {
@@ -6,7 +7,7 @@ async function createUser(uid, data) {
     username: data.username,
     email: data.email,
     password: data.password,
-    credits: 0
+    credits: 0,
   });
 }
 
@@ -19,8 +20,4 @@ async function updateCredits(uid, credits) {
   return await Users.doc(uid).update({ credits });
 }
 
-module.exports = {
-  createUser,
-  getUser,
-  updateCredits
-};
+export { createUser, getUser, updateCredits };
